@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼好图 | PINHAOTU.TOP</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+    <style>
+        /* 全局样式 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* 删除 .preview-placeholder 相关样式 */
+        /* 原有：
+        .preview-placeholder {
+            display: none;
+        }
+        .right-panel:not(:has(#preview[style*="display: block"], #splitPreview[style*="display: flex"])) .preview-placeholder {
+            display: block;
+        }
+        .right-panel:has(#preview:not([style*="display: none"]), #splitPreview:not([style*="display: none"])) .preview-placeholder {
+            display: none;
+        }
+        */
+        .container {
+            width: 900px;
+            max-height: 650px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            padding: 20px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .left-panel {
+            width: 50%;
+            padding-right: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 650px;
+            overflow-y: auto;
+        }
+        .right-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            position: relative;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .tab.active {
+            border: 2px solid #000000;
+        }
+        .tab:hover {
+            background-color: #f0f0f0;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .section {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .section label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .bottom-type,
+        .bottom-effect {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .bottom-type label,
+        .bottom-effect label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .bottom-type label:has(:checked),
+        .bottom-effect label:has(:checked) {
+            border: 2px solid #000000;
+        }
+        .bottom-type input[type="radio"],
+        .bottom-effect input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            vertical-align: middle;
+        }
+        .bottom-effect input[type="checkbox"] {
+            border-radius: 4px;
+        }
+        .bottom-type input[type="radio"]:checked,
+        .bottom-effect input[type="checkbox"]:checked {
+            border: 2px solid #000000;
+        }
+        .bottom-type input[type="radio"]:checked::before,
+        .bottom-effect input[type="checkbox"]:checked::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #000000;
+        }
+        .bottom-type input[type="radio"]:checked::before {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .bottom-effect input[type="checkbox"]:checked::before {
+            width: 8px; /* 修复无效值，设置为合理宽度 */
+            height: 8px; /* 调整为方形，使打勾更明显 */
+            border-radius: 2px;
+        }
+        .bottom-type span,
+        .bottom-effect span {
+            font-size: 14px;
+            line-height: 16px;
+        }
+        .upload-area.restore {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .upload-area.restore:hover {
+            background-color: #f0f0f0;
+        }
+        .upload-area.restore .upload-prompt {
+            flex: 0 0 auto;
+        }
+        .upload-area.restore .thumbnail-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .shape-tab-container {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .shape-tab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+            font-weight: bold;
+        }
+        .shape-tab.active {
+            border: 2px solid #000000;
+            font-weight: bold;
+        }
+        .shape-tab:hover {
+            background-color: #f0f0f0;
+        }
+        .shape-tab-content {
+            display: none;
+        }
+        .shape-tab-content.active {
+            display: block;
+        }
+        .background-type,
+        .color-mode {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+        .background-type label,
+        .color-mode label {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .background-type label:has(:checked),
+        .color-mode label:has(:checked) {
+            border: 2px solid #000000;
+        }
+        .background-type input[type="radio"],
+        .color-mode input[type="radio"] {
+            display: none;
+        }
+        .background-type span,
+        .color-mode span {
+            font-size: 14px;
+        }
+        .upload-and-buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .upload-area.split:hover {
+            background-color: #f0f0f0;
+        }
+        .upload-area.split {
+            flex: 1;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .upload-area.split .upload-prompt {
+            flex: 0 0 auto;
+        }
+        .upload-area.split .thumbnail-list {
+            display: none;
+        }
+        .split-buttons {
+            flex: 0 0 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .split-buttons button {
+            padding: 8px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .split-buttons button:hover {
+            background-color: #555;
+        }
+        .thumbnail {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .thumbnail .delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 12px;
+            line-height: 16px;
+            text-align: center;
+            cursor: pointer;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            border: 2px solid #ccc;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #555;
+        }
+        .range-value {
+            font-size: 14px;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+        .preview-item {
+            text-align: center;
+        }
+        .preview-item img {
+            max-width: 100px;
+            max-height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .preview-item .label {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .preview-item button,
+        .download-buttons button {
+            padding: 6px 12px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 0 5px;
+        }
+        .preview-item button:hover,
+        .download-buttons button:hover {
+            background-color: #555;
+        }
+        #preview {
+            max-width: 100%;
+            display: none;
+            margin-bottom: 10px;
+        }
+        #restore.tab-content.active ~ .right-panel #preview {
+            max-width: 100%;
+            max-height: none;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0;
+        }
+        #split.tab-content.active ~ .right-panel #preview {
+            max-width: 100%;
+            max-height: 150px;
+            height: auto;
+            object-fit: contain;
+            display: none;
+            margin-bottom: 10px;
+        }
+        .preview-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        #restore.tab-content.active ~ .right-panel .preview-container {
+            height: calc(100% - 20px);
+            align-items: center;
+        }
+        #split.tab-content.active ~ .right-panel .preview-container {
+            max-height: 160px;
+        }
+        .preview-container .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        #loading {
+            position: absolute;
+            top: 170px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 10;
+            width: 90%;
+            pointer-events: none;
+        }
+        .dragover {
+            border: 2px dashed #007bff !important;
+            background-color: #e6f0ff;
+        }
+        .restore-buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .restore-buttons button {
+            padding: 8px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        .restore-buttons button:hover {
+            background-color: #555;
+        }
+        #split.tab-content.active ~ .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #split.tab-content.active ~ .right-panel #preview {
+            max-height: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        #split.tab-content.active ~ .right-panel .preview-grid {
+            max-height: 450px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        #split.tab-content.active ~ .right-panel .download-buttons {
+            margin-top: 10px;
+        }
+        #successMessage {
+            display: none; /* 默认隐藏 */
+        }
+        
+        @media screen and (min-width: 769px) {
+            #successMessage.show {
+                display: block; /* 电脑端添加 .show 类时显示 */
+                /* 电脑端特有样式，比如更大的字体或不同的背景色 */
+                position: absolute;
+                top: 40%;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                color: #666;
+                font-size: 22px;
+                font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.8);
+                padding: 10px;
+                border-radius: 4px;
+                z-index: 20;
+                width: 100%;
+                pointer-events: none;
+            }
+        }
+        @media screen and (max-width: 768px) {
+            html, body {
+                min-height: 100vh; /* 允许页面扩展超出视口 */
+                height: auto; /* 确保随内容自适应 */
+                overflow-y: auto; /* 浏览器控制滑动 */
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                display: block; /* 移除 Flex 布局，使用默认流布局 */
+                padding: 0;
+            }
+            .container {
+                width: 100%;
+                max-width: 100%;
+                height: auto; /* 完全随内容自适应 */
+                max-height: 100%;
+                min-height: auto; /* 移除高度限制 */
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0; /* 防止 Flex 压缩 */
+                flex-grow: 0; /* 不扩展填充 */
+                padding: 10px;
+                box-sizing: border-box;
+                overflow-y: visible; /* 允许内容溢出 */
+            }
+            .left-panel {
+                width: 100%;
+                padding-right: 0;
+                height: auto;
+                min-height: auto;
+                overflow-y: visible;
+            }
+            .right-panel {
+                width: 100%;
+                margin-top: 10px;
+                padding: 10px;
+                display: none; /* 初始隐藏 */
+                box-sizing: border-box;
+                height: auto; /* 自适应内容 */
+                overflow-y: visible; /* 无内部滑动 */
+            }
+            .right-panel:has(#preview:not([style*="display: none"]), #splitPreview:not([style*="display: none"]), .download-buttons:not([style*="display: none"])) {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                border: 2px dashed #ccc;
+                overflow-y: visible;
+            }
+            h1 {
+                font-size: 20px;
+                margin-bottom: 8px;
+            }
+            .tab-container {
+                gap: 8px;
+            }
+            .tab {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .section label {
+                font-size: 13px;
+            }
+            .bottom-type span,
+            .bottom-effect span,
+            .background-type span,
+            .color-mode span {
+                font-size: 13px;
+            }
+            .upload-area.restore {
+                height: 120px;
+                font-size: 13px;
+                padding: 8px;
+            }
+            .upload-area.split {
+                min-height: 50px;
+                padding: 15px;
+                font-size: 13px;
+            }
+            .thumbnail {
+                width: 40px;
+                height: 40px;
+            }
+            .thumbnail .delete-btn {
+                width: 14px;
+                height: 14px;
+                font-size: 10px;
+                line-height: 14px;
+            }
+            .restore-buttons button,
+            .split-buttons button,
+            .preview-item button,
+            .download-buttons button {
+                padding: 8px 10px;
+                font-size: 13px;
+                min-height: 44px;
+            }
+            .restore-buttons {
+                gap: 8px;
+                margin-top: 20px;
+            }
+            .split-buttons {
+                flex: 0 0 80px;
+                gap: 8px;
+            }
+            .restore-buttons button:nth-child(3),
+            .preview-item button,
+            .download-buttons button:nth-child(1) {
+                display: none;
+            }
+            input[type="range"] {
+                height: 6px;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                width: 14px;
+                height: 14px;
+            }
+            .range-value {
+                font-size: 13px;
+            }
+            #preview {
+                width: 70%;
+                height: auto;
+                margin-bottom: 8px;
+                -webkit-user-drag: none;
+                user-drag: none;
+                object-fit: contain;
+            }
+            #restore.tab-content.active ~ .right-panel #preview {
+                width: 80%;
+                height: auto;
+                object-fit: contain;
+            }
+            #split.tab-content.active ~ .right-panel #preview {
+                width: 80%;
+                height: auto;
+                object-fit: contain;
+            }
+            #split.tab-content.active ~ .right-panel .preview-grid {
+                max-height: none;
+                overflow-y: visible;
+                width: 100%;
+            }
+            .download-buttons {
+                display: flex;
+                gap: 8px;
+                margin-top: 8px;
+                justify-content: center;
+            }
+            .preview-grid {
+                gap: 8px;
+            }
+            .preview-item img {
+                max-width: 80px;
+                max-height: 80px;
+            }
+            .preview-item .label {
+                font-size: 12px;
+            }
+            #loading {
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 13px;
+                padding: 8px;
+                width: 80%;
+            }
+            .shape-tab-container {
+                gap: 8px;
+            }
+            .shape-tab {
+                padding: 6px;
+                font-size: 13px;
+            }
+            #successMessage.show {
+                display: block; /* 移动端添加 .show 类时显示 */
+                /* 移动端特有样式 */
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                color: #666;
+                font-size: 13px;
+                font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.8);
+                padding: 8px;
+                border-radius: 4px;
+                z-index: 20;
+                width: 70%;
+                pointer-events: none;
+            }
+        }
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            .left-panel {
+                height: auto;
+                overflow-y: visible;
+            }
+            .right-panel {
+                margin-top: 8px;
+            }
+            h1 {
+                font-size: 18px;
+            }
+            .tab {
+                font-size: 13px;
+                padding: 6px;
+            }
+            .section label {
+                font-size: 12px;
+            }
+            .bottom-type span,
+            .bottom-effect span,
+            .background-type span,
+            .color-mode span {
+                font-size: 12px;
+            }
+            .upload-area.restore {
+                height: 100px;
+            }
+            .thumbnail {
+                width: 35px;
+                height: 35px;
+            }
+            .restore-buttons button,
+            .split-buttons button,
+            .preview-item button,
+            .download-buttons button {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+            .preview-item img {
+                max-width: 70px;
+                max-height: 70px;
+            }
+            #preview {      
+                width: 70%;
+                height: auto;
+                object-fit: contain;
+            }
+            #split.tab-content.active ~ .right-panel .preview-grid {
+                max-height: 35vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>拼好图 | PINHAOTU.TOP</h1>
+            <div class="tab-container">
+                <div class="tab active" data-tab="restore">拼图还原</div>
+                <div class="tab" data-tab="split">图片拆分</div>
+            </div>
+            <div id="restore" class="tab-content active">
+                <div class="section">
+                    <label>底色类型</label>
+                    <div class="bottom-type">
+                        <label>
+                            <input type="radio" name="background_type" value="white" checked onchange="handleOptionChange()">
+                            <span>白色底色</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="background_type" value="black" onchange="handleOptionChange()">
+                            <span>黑色底色</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="section">
+                    <label>底样效果</label>
+                    <div class="bottom-effect">
+                        <label>
+                            <input type="checkbox" id="invertEffect" onchange="handleOptionChange()">
+                            <span>反转底色</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="upload-area restore" id="uploadArea">
+                    <div class="upload-prompt">点击选择图片或拖拽图片到页面</div>
+                    <div class="thumbnail-list" id="thumbnailList"></div>
+                    <input type="file" id="images" multiple accept="image/png, image/jpeg, image/jpg" style="display: none;" onchange="handleFileSelect(event)">
+                </div>
+                <div class="restore-buttons">
+                    <button onclick="processImages()">合成</button>
+                    <button onclick="clearImages()">清空图片</button>
+                    <button onclick="downloadImage()">下载结果</button>
+                </div>
+            </div>
+            <div id="split" class="tab-content">
+                <div class="section">
+                    <label>拆分设置</label>
+                    <div>
+                        <input type="range" id="numOutputImages" min="4" max="9" value="6" oninput="updateRangeValue('numOutputImages', 'numOutputImagesValue')">
+                        <div class="range-value" id="numOutputImagesValue">6</div>
+                    </div>
+                </div>
+                <div class="section">
+                    <label>分解形状</label>
+                    <div class="shape-tab-container">
+                        <div class="shape-tab active" data-shape="square">方块</div>
+                    </div>
+                    <div id="square" class="shape-tab-content active">
+                        <div class="section">
+                            <label>方块大小（像素）</label>
+                            <input type="range" id="squareSize" min="10" max="120" value="30" oninput="updateRangeValue('squareSize', 'squareSizeValue')">
+                            <div class="range-value" id="squareSizeValue">30</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <label>背景设置</label>
+                    <div class="background-type">
+                        <label>
+                            <input type="radio" name="split_background" value="white" checked>
+                            <span>白色</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="split_background" value="black">
+                            <span>黑色</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="split_background" value="transparent">
+                            <span>透明</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="section">
+                    <label>颜色处理</label>
+                    <div class="color-mode">
+                        <label>
+                            <input type="radio" name="color_mode" value="normal" checked>
+                            <span>正常颜色</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="color_mode" value="invert">
+                            <span>颜色反转</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="upload-and-buttons">
+                    <div class="upload-area split" id="splitUploadArea">
+                        <div class="upload-prompt">点击选择图片或拖拽单张图片到页面</div>
+                        <div class="thumbnail-list" id="splitThumbnailList"></div>
+                        <input type="file" id="splitImage" accept="image/png, image/jpeg, image/jpg" style="display: none;" onchange="handleSplitFileSelect(event)">
+                    </div>
+                    <div class="split-buttons">
+                        <button onclick="fragmentImage()">分解图片</button>
+                        <button onclick="clearSplitImages()">清空图片</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <!-- 需求 1：删除 <div class="preview-placeholder">预览框</div> -->
+            <img id="preview" alt="处理结果">
+            <div id="successMessage">已成功分解，下滑查看和下载！</div>
+            <div id="loading">处理中，请稍候...</div>
+            <div id="splitPreview" class="preview-grid" style="display: none;"></div>
+            <div class="download-buttons" id="downloadButtons" style="display: none; margin-top: 10px;">
+                <button onclick="downloadAllFragments()">全部下载</button>
+                <button onclick="downloadZip()">打包下载</button>
+            </div>
+        </div>
+    </div>
+    <canvas id="canvas" style="display: none;" willReadFrequently="true"></canvas>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const backgroundColors = {
+            white: [255, 255, 255],
+            black: [0, 0, 0],
+            transparent: [0, 0, 0, 0]
+        };
+        let restoreFiles = [];
+        let restoreImageDatas = [];
+        let splitFiles = [];
+        let isProcessing = false;
+        let fragmentCanvases = [];
+        let previewUrl = null; // 新增：拆分预览URL
+        let restoreUrls = []; // 新增：还原缩略图URL数组
+        function getTimestamp() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            const second = String(now.getSeconds()).padStart(2, '0');
+            return `${year}${month}${day}${hour}${minute}${second}`;
+        }
+        function switchTab(tabId) {
+            const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+            if (!tab) {
+                console.error(`Tab not found: .tab[data-tab="${tabId}"]`);
+                return;
+            }
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const content = document.getElementById(tabId);
+            if (!content) {
+                console.error(`Content not found: #${tabId}`);
+                return;
+            }
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            content.classList.add('active');
+            const preview = document.getElementById('preview');
+            if (preview) preview.style.display = 'none'; // 添加检查
+            document.getElementById('splitPreview').style.display = 'none';
+            document.getElementById('downloadButtons').style.display = 'none';
+            document.getElementById('successMessage').classList.remove('show');
+            const existingContainer = document.querySelector('.preview-container');
+            if (existingContainer) existingContainer.remove();
+            if (tabId === 'restore') {
+                updateThumbnails();
+            } else {
+                updateSplitThumbnails();
+            }
+        }
+        function switchShapeTab() {
+            const tab = document.querySelector('.shape-tab[data-shape="square"]');
+            if (tab) tab.classList.add('active');
+            const content = document.getElementById('square');
+            if (content) content.classList.add('active');
+        }
+        function bindEvents() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    if (tabId) {
+                        switchTab(tabId);
+                    } else {
+                        console.error('Tab missing data-tab attribute:', tab);
+                    }
+                });
+            });
+            document.getElementById('uploadArea').addEventListener('click', () => {
+                document.getElementById('images').click();
+            });
+            document.getElementById('splitUploadArea').addEventListener('click', () => {
+                document.getElementById('splitImage').click();
+            });
+            document.getElementById('thumbnailList').addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const index = parseInt(e.target.parentElement.dataset.index);
+                    restoreFiles.splice(index, 1);
+                    restoreUrls.splice(index, 1);
+                    updateThumbnails();
+                    processImages();
+                }
+            });
+        }
+        function updateRangeValue(inputId, valueId) {
+            document.getElementById(valueId).textContent = document.getElementById(inputId).value;
+        }
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.querySelector('.container').classList.add('dragover');
+        });
+        document.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            document.querySelector('.container').classList.remove('dragover');
+        });
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.querySelector('.container').classList.remove('dragover');
+            const droppedFiles = Array.from(e.dataTransfer.files).filter(file =>
+                file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg'
+            );
+            if (document.getElementById('restore').classList.contains('active')) {
+                handleFiles(droppedFiles);
+            } else if (document.getElementById('split').classList.contains('active')) {
+                handleSplitFiles(droppedFiles.slice(0, 1));
+            }
+        });
+        function handleFileSelect(event) {
+            restoreUrls.forEach(url => URL.revokeObjectURL(url)); // 释放旧URL
+            restoreUrls = []; // 清空URL数组
+            restoreFiles = []; // 清空旧图片
+            const selectedFiles = Array.from(event.target.files);
+            handleFiles(selectedFiles);
+            event.target.value = null;
+        }
+        function handleSplitFileSelect(event) {
+            if (previewUrl) URL.revokeObjectURL(previewUrl); // 释放旧URL
+            previewUrl = null; // 重置
+            splitFiles = []; // 清空旧图片
+            fragmentCanvases.forEach(canvas => canvas = null); // 释放旧Canvas
+            fragmentCanvases = []; // 清空Canvas数组
+            const selectedFiles = Array.from(event.target.files);
+            handleSplitFiles(selectedFiles.slice(0, 1));
+            event.target.value = null; // 确保输入框重置
+        }
+        function handleFiles(newFiles) {
+            restoreFiles = restoreFiles.concat(newFiles);
+            updateThumbnails();
+            processImages();
+        }
+        function handleSplitFiles(newFiles) {
+            splitFiles = newFiles;
+            updateSplitThumbnails();
+        }
+        function updateThumbnails() {
+            const thumbnailList = document.getElementById('thumbnailList');
+            const fragment = document.createDocumentFragment();
+            restoreUrls.forEach(url => URL.revokeObjectURL(url));
+            restoreUrls = [];
+            restoreFiles.forEach((file, index) => {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'thumbnail';
+                thumbnail.dataset.index = index; // 存储索引
+                const img = document.createElement('img');
+                const url = URL.createObjectURL(file);
+                restoreUrls.push(url);
+                img.src = url;
+                thumbnail.appendChild(img);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerText = '×';
+                thumbnail.appendChild(deleteBtn);
+                fragment.appendChild(thumbnail);
+            });
+            thumbnailList.innerHTML = '';
+            thumbnailList.appendChild(fragment);
+        }
+        function updateSplitThumbnails() {
+            let preview = document.getElementById('preview');
+            const rightPanel = document.querySelector('.right-panel');
+            const uploadPrompt = document.querySelector('#splitUploadArea .upload-prompt');
+            let previewContainer = document.querySelector('.preview-container');
+            
+            console.log('updateSplitThumbnails: splitFiles length:', splitFiles.length); // 调试日志
+            
+            // 如果 preview 不存在，重新创建并添加到 right-panel
+            if (!preview) {
+                preview = document.createElement('img');
+                preview.id = 'preview';
+                preview.alt = '处理结果';
+                rightPanel.insertBefore(preview, document.getElementById('splitPreview'));
+            }
+            
+            // 移除旧的 previewContainer
+            if (previewContainer) previewContainer.remove();
+            
+            // 创建新的 previewContainer
+            previewContainer = document.createElement('div');
+            previewContainer.className = 'preview-container';
+            previewContainer.appendChild(preview); // 将 preview 放入容器
+            rightPanel.insertBefore(previewContainer, document.getElementById('splitPreview'));
+            
+            if (splitFiles.length > 0) {
+                if (previewUrl) URL.revokeObjectURL(previewUrl); // 释放旧URL
+                previewUrl = URL.createObjectURL(splitFiles[0]); // 存储新URL
+                console.log('Setting preview.src to:', previewUrl); // 调试日志
+                preview.src = previewUrl;
+                preview.style.display = 'block';
+                uploadPrompt.classList.add('hide');
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerText = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    splitFiles = [];
+                    if (previewUrl) URL.revokeObjectURL(previewUrl); // 释放URL
+                    previewUrl = null;
+                    updateSplitThumbnails();
+                    document.getElementById('splitPreview').style.display = 'none';
+                    document.getElementById('downloadButtons').style.display = 'none';
+                };
+                previewContainer.appendChild(deleteBtn);
+            } else {
+                preview.style.display = 'none';
+                if (previewUrl) URL.revokeObjectURL(previewUrl); // 释放URL
+                previewUrl = null;
+                uploadPrompt.classList.remove('hide');
+                console.log('No splitFiles, hiding preview'); // 调试日志
+            }
+        }
+        function clearImages() {
+            restoreFiles = [];
+            restoreImageDatas = [];
+            restoreUrls.forEach(url => URL.revokeObjectURL(url)); // 释放缩略图URL
+            restoreUrls = []; // 清空URL数组
+            updateThumbnails();
+            document.getElementById('preview').style.display = 'none';
+        }
+        function clearSplitImages() {
+            splitFiles = [];
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+            fragmentCanvases = [];
+            updateSplitThumbnails();
+            document.getElementById('splitPreview').style.display = 'none';
+            document.getElementById('downloadButtons').style.display = 'none';
+            document.getElementById('successMessage').classList.remove('show');
+            document.getElementById('splitImage').value = null;
+            const canvas = document.getElementById('canvas');
+            canvas.width = 0;
+            canvas.height = 0;
+        }
+        function handleOptionChange() {
+            if (restoreFiles.length > 0) {
+                processImages();
+            }
+        }
+        async function processImages() {
+            if (isProcessing) return;
+            isProcessing = true;
+            if (restoreFiles.length < 2) {
+                const preview = document.getElementById('preview');
+                if (preview) preview.style.display = 'none';
+                isProcessing = false;
+                return;
+            }
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            document.getElementById('splitPreview').style.display = 'none';
+            document.getElementById('downloadButtons').style.display = 'none';
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const backgroundType = document.querySelector('input[name="background_type"]:checked').value;
+            const invertEffect = document.getElementById('invertEffect').checked;
+
+            const images = await Promise.all(restoreFiles.map(file => loadImage(file)));
+            const baseWidth = images[0].width;
+            const baseHeight = images[0].height;
+            canvas.width = baseWidth;
+            canvas.height = baseHeight;
+
+            // 绘制第一张图片
+            ctx.drawImage(images[0], 0, 0);
+
+            // 根据背景类型设置合成模式
+            if (backgroundType === "black") {
+                ctx.globalCompositeOperation = 'lighten'; // 黑色底保留较亮像素
+            } else {
+                ctx.globalCompositeOperation = 'multiply'; // 白色底模拟颜色相乘
+            }
+
+            // 绘制后续图片
+            for (let i = 1; i < images.length; i++) {
+                ctx.drawImage(images[i], 0, 0);
+            }
+
+            // 恢复默认合成模式
+            ctx.globalCompositeOperation = 'source-over';
+
+            // 如果需要反色，执行反色操作
+            if (invertEffect) {
+                const imageData = ctx.getImageData(0, 0, baseWidth, baseHeight);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 0) { // 仅处理非透明像素
+                        data[i] = 255 - data[i];     // R
+                        data[i + 1] = 255 - data[i + 1]; // G
+                        data[i + 2] = 255 - data[i + 2]; // B
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            // 处理透明底（可选补充逻辑）
+            if (backgroundType === "transparent") {
+                // 可根据需求添加透明底处理逻辑，例如保留 alpha 通道
+                // 示例中未实现具体逻辑
+            }
+
+            let preview = document.getElementById('preview');
+            let previewContainer = document.querySelector('.preview-container');
+            const rightPanel = document.querySelector('.right-panel');
+            if (!previewContainer) {
+                previewContainer = document.createElement('div');
+                previewContainer.className = 'preview-container';
+                rightPanel.insertBefore(previewContainer, document.getElementById('splitPreview'));
+            }
+            if (!preview) {
+                preview = document.createElement('img');
+                preview.id = 'preview';
+                preview.alt = '处理结果';
+                previewContainer.appendChild(preview);
+            }
+
+            preview.src = canvas.toDataURL('image/png');
+            preview.style.display = 'block';
+            loading.style.display = 'none';
+            isProcessing = false;
+        }        
+        function downloadImage() {
+            const preview = document.getElementById('preview');
+            if (preview.style.display === 'none') {
+                alert('请先处理图片！');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = preview.src;
+            link.download = `image_${getTimestamp()}.png`;
+            link.click();
+        }
+        async function fragmentImage() {
+            if (isProcessing) return;
+            isProcessing = true;
+            if (splitFiles.length === 0) {
+                alert('请上传一张图片！');
+                isProcessing = false;
+                return;
+            }
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            document.getElementById('splitPreview').style.display = 'none';
+            document.getElementById('downloadButtons').style.display = 'none';
+            fragmentCanvases = [];
+            const numOutputImages = parseInt(document.getElementById('numOutputImages').value);
+            const squareSize = parseInt(document.getElementById('squareSize').value);
+            const backgroundType = document.querySelector('input[name="split_background"]:checked').value;
+            const colorMode = document.querySelector('input[name="color_mode"]:checked').value;
+            const file = splitFiles[0];
+            const img = await loadImage(file);
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            let imageData = ctx.getImageData(0, 0, img.width, img.height);
+            if (colorMode === 'invert') {
+                ctx.filter = 'invert(100%)';
+                ctx.drawImage(img, 0, 0);
+                ctx.filter = 'none';
+                imageData = ctx.getImageData(0, 0, img.width, img.height);
+            }
+            const blockMap = new Uint8Array(img.width * img.height);
+            const blockCount = Math.ceil(img.width / squareSize) * Math.ceil(img.height / squareSize);
+            const blocksPerImage = Math.floor(blockCount / numOutputImages);
+
+            for (let y = 0, blockIdx = 0; y < img.height; y += squareSize) {
+                for (let x = 0; x < img.width; x += squareSize, blockIdx++) {
+                    const fragmentIdx = Math.floor(Math.random() * numOutputImages);
+                    for (let dy = 0; dy < squareSize && y + dy < img.height; dy++) {
+                        for (let dx = 0; dx < squareSize && x + dx < img.width; dx++) {
+                            blockMap[(y + dy) * img.width + (x + dx)] = fragmentIdx;
+                        }
+                    }
+                }
+            }
+
+            fragmentCanvases = [];
+            for (let i = 0; i < numOutputImages; i++) {
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = img.width;
+                outputCanvas.height = img.height;
+                const outputCtx = outputCanvas.getContext('2d');
+                const outputData = ctx.createImageData(img.width, img.height);
+                for (let j = 0; j < imageData.data.length; j += 4) {
+                    if (blockMap[j / 4] === i) {
+                        outputData.data[j] = imageData.data[j];
+                        outputData.data[j + 1] = imageData.data[j + 1];
+                        outputData.data[j + 2] = imageData.data[j + 2];
+                        outputData.data[j + 3] = imageData.data[j + 3];
+                    } else {
+                        outputData.data[j + 3] = 0;
+                    }
+                }
+                outputCtx.putImageData(outputData, 0, 0);
+                if (backgroundType !== 'transparent') {
+                    const bgCanvas = document.createElement('canvas');
+                    bgCanvas.width = img.width;
+                    bgCanvas.height = img.height;
+                    const bgCtx = bgCanvas.getContext('2d');
+                    bgCtx.fillStyle = backgroundType === 'white' ? '#fff' : '#000';
+                    bgCtx.fillRect(0, 0, img.width, img.height);
+                    bgCtx.drawImage(outputCanvas, 0, 0);
+                    fragmentCanvases.push(bgCanvas);
+                } else {
+                    fragmentCanvases.push(outputCanvas);
+                }
+            }
+
+            const splitPreview = document.getElementById('splitPreview');
+            splitPreview.innerHTML = '';
+            const timestamp = getTimestamp().slice(0, -2);
+            fragmentCanvases.forEach((canvas, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL('image/png');
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = `分解${index + 1}`;
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = '下载';
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = `image_${timestamp}_${index + 1}.png`;
+                    link.click();
+                };
+                previewItem.appendChild(img);
+                previewItem.appendChild(label);
+                previewItem.appendChild(downloadBtn);
+                splitPreview.appendChild(previewItem);
+            });
+            document.getElementById('splitPreview').style.display = 'flex';
+            document.getElementById('downloadButtons').style.display = 'block';
+            loading.style.display = 'none';
+            document.getElementById('successMessage').classList.add('show');
+            isProcessing = false;
+            document.getElementById('splitImage').value = null;
+}
+
+        function downloadAllFragments() {
+            const timestamp = getTimestamp().slice(0, -2);
+            fragmentCanvases.forEach((canvas, index) => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `image_${timestamp}_${index + 1}.png`;
+                link.click();
+            });
+        }
+        function downloadZip() {
+            const zip = new JSZip();
+            const timestamp = getTimestamp().slice(0, -2);
+            fragmentCanvases.forEach((canvas, index) => {
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64 = dataUrl.split(',')[1];
+                zip.file(`image_${timestamp}_${index + 1}.png`, base64, { base64: true });
+            });
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, `fragments_${timestamp}.zip`);
+            });
+        }
+        function loadImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = URL.createObjectURL(file);
+            });
+        }
+        bindEvents();
+    });
+    </script>
+</body>
+</html>
