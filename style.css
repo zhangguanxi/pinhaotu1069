@@ -1,0 +1,766 @@
+/* 全局样式 */
+html, body {
+margin: 0;
+padding: 0;
+overflow-x: hidden;
+}
+body {
+font-family: Arial, sans-serif;
+background-color: #f9f9f9;
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+/* 删除 .preview-placeholder 相关样式 */
+/* 原有：
+.preview-placeholder {
+display: none;
+}
+.right-panel:not(:has(#preview[style*="display: block"], #splitPreview[style*="display: flex"])) .preview-placeholder {
+display: block;
+}
+.right-panel:has(#preview:not([style*="display: none"]), #splitPreview:not([style*="display: none"])) .preview-placeholder {
+display: none;
+}
+*/
+.container {
+width: 900px;
+max-height: 650px;
+border: 1px solid #ccc;
+border-radius: 8px;
+background-color: #fff;
+padding: 20px;
+display: flex;
+overflow: hidden;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.left-panel {
+width: 50%;
+padding-right: 20px;
+display: flex;
+flex-direction: column;
+min-height: 650px;
+overflow-y: auto;
+}
+.right-panel {
+width: 50%;
+display: flex;
+flex-direction: column;
+align-items: center;
+border: 2px dashed #ccc;
+border-radius: 8px;
+position: relative;
+padding: 10px;
+overflow-y: auto;
+}
+h1 {
+font-size: 24px;
+color: #333;
+text-align: center;
+margin-bottom: 10px;
+}
+.tab-container {
+display: flex;
+margin-bottom: 15px;
+gap: 10px;
+}
+.tab {
+flex: 1;
+padding: 10px;
+text-align: center;
+font-size: 16px;
+font-weight: bold;
+background-color: #f5f5f5;
+border: 2px solid transparent;
+border-radius: 8px;
+cursor: pointer;
+transition: border-color 0.3s, background-color 0.3s;
+}
+.tab.active {
+border: 2px solid #000000;
+}
+.tab:hover {
+background-color: #f0f0f0;
+}
+.tab-content {
+display: none;
+}
+.tab-content.active {
+display: block;
+}
+.section {
+margin-bottom: 15px;
+width: 100%;
+}
+.section label {
+font-weight: bold;
+display: block;
+margin-bottom: 5px;
+font-size: 14px;
+}
+.bottom-type,
+.bottom-effect {
+width: 100%;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.bottom-type label,
+.bottom-effect label {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background-color: #f5f5f5;
+padding: 10px;
+border-radius: 8px;
+cursor: pointer;
+border: 2px solid transparent;
+}
+.bottom-type label:has(:checked),
+.bottom-effect label:has(:checked) {
+border: 2px solid #000000;
+}
+.bottom-type input[type="radio"],
+.bottom-effect input[type="checkbox"] {
+-webkit-appearance: none;
+appearance: none;
+margin-right: 10px;
+width: 16px;
+height: 16px;
+border: 2px solid #ccc;
+border-radius: 50%;
+cursor: pointer;
+position: relative;
+vertical-align: middle;
+}
+.bottom-effect input[type="checkbox"] {
+border-radius: 4px;
+}
+.bottom-type input[type="radio"]:checked,
+.bottom-effect input[type="checkbox"]:checked {
+border: 2px solid #000000;
+}
+.bottom-type input[type="radio"]:checked::before,
+.bottom-effect input[type="checkbox"]:checked::before {
+content: '';
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+background-color: #000000;
+}
+.bottom-type input[type="radio"]:checked::before {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+}
+.bottom-effect input[type="checkbox"]:checked::before {
+width: 8px; /* 修复无效值，设置为合理宽度 */
+height: 8px; /* 调整为方形，使打勾更明显 */
+border-radius: 2px;
+}
+.bottom-type span,
+.bottom-effect span {
+font-size: 14px;
+line-height: 16px;
+}
+.upload-area.restore {
+border: 2px dashed #ccc;
+padding: 10px;
+text-align: center;
+font-size: 14px;
+color: #666;
+cursor: pointer;
+height: 150px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+}
+.upload-area.restore:hover {
+background-color: #f0f0f0;
+}
+.upload-area.restore .upload-prompt {
+flex: 0 0 auto;
+}
+.upload-area.restore .thumbnail-list {
+flex: 1;
+overflow-y: auto;
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+margin-top: 10px;
+}
+.shape-tab-container {
+display: flex;
+margin-bottom: 10px;
+gap: 10px;
+}
+.shape-tab {
+flex: 1;
+padding: 8px;
+text-align: center;
+font-size: 14px;
+background-color: #f5f5f5;
+border: 2px solid transparent;
+border-radius: 8px;
+cursor: pointer;
+transition: border-color 0.3s, background-color 0.3s;
+font-weight: bold;
+}
+.shape-tab.active {
+border: 2px solid #000000;
+font-weight: bold;
+}
+.shape-tab:hover {
+background-color: #f0f0f0;
+}
+.shape-tab-content {
+display: none;
+}
+.shape-tab-content.active {
+display: block;
+}
+.background-type,
+.color-mode {
+display: flex;
+flex-direction: row;
+gap: 10px;
+}
+.background-type label,
+.color-mode label {
+flex: 1;
+padding: 10px;
+text-align: center;
+background-color: #f5f5f5;
+border-radius: 8px;
+cursor: pointer;
+border: 2px solid transparent;
+}
+.background-type label:has(:checked),
+.color-mode label:has(:checked) {
+border: 2px solid #000000;
+}
+.background-type input[type="radio"],
+.color-mode input[type="radio"] {
+display: none;
+}
+.background-type span,
+.color-mode span {
+font-size: 14px;
+}
+.upload-and-buttons {
+display: flex;
+flex-direction: row;
+gap: 10px;
+margin-top: 10px;
+}
+.upload-area.split:hover {
+background-color: #f0f0f0;
+}
+.upload-area.split {
+flex: 1;
+border: 2px dashed #ccc;
+padding: 20px;
+text-align: center;
+font-size: 14px;
+color: #666;
+cursor: pointer;
+min-height: 60px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
+.upload-area.split .upload-prompt {
+flex: 0 0 auto;
+}
+.upload-area.split .thumbnail-list {
+display: none;
+}
+.split-buttons {
+flex: 0 0 100px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.split-buttons button {
+padding: 8px;
+background-color: #666;
+color: white;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 14px;
+}
+.split-buttons button:hover {
+background-color: #555;
+}
+.thumbnail {
+position: relative;
+width: 50px;
+height: 50px;
+border: 1px solid #ccc;
+border-radius: 4px;
+overflow: hidden;
+}
+.thumbnail img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+.thumbnail .delete-btn {
+position: absolute;
+top: 2px;
+right: 2px;
+background-color: #ff4444;
+color: white;
+border: none;
+border-radius: 50%;
+width: 16px;
+height: 16px;
+font-size: 12px;
+line-height: 16px;
+text-align: center;
+cursor: pointer;
+}
+input[type="range"] {
+width: 100%;
+-webkit-appearance: none;
+appearance: none;
+height: 8px;
+background: #f5f5f5;
+border-radius: 4px;
+border: 2px solid #ccc;
+outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 16px;
+height: 16px;
+background: #666;
+border-radius: 50%;
+cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+background: #555;
+}
+.range-value {
+font-size: 14px;
+text-align: center;
+margin-top: 5px;
+}
+.preview-grid {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+justify-content: center;
+width: 100%;
+}
+.preview-item {
+text-align: center;
+}
+.preview-item img {
+max-width: 100px;
+max-height: 100px;
+border: 1px solid #ccc;
+border-radius: 4px;
+}
+.preview-item .label {
+font-size: 14px;
+margin: 5px 0;
+}
+.preview-item button,
+.download-buttons button {
+padding: 6px 12px;
+background-color: #666;
+color: white;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 12px;
+margin: 0 5px;
+}
+.preview-item button:hover,
+.download-buttons button:hover {
+background-color: #555;
+}
+#preview {
+max-width: 100%;
+display: none;
+margin-bottom: 10px;
+}
+#restore.tab-content.active ~ .right-panel #preview {
+max-width: 100%;
+max-height: none;
+width: 100%;
+height: auto;
+object-fit: contain;
+display: block;
+margin: 0;
+}
+#split.tab-content.active ~ .right-panel #preview {
+max-width: 100%;
+max-height: 150px;
+height: auto;
+object-fit: contain;
+display: none;
+margin-bottom: 10px;
+}
+.preview-container {
+position: relative;
+display: flex;
+justify-content: center;
+align-items: center;
+max-width: 100%;
+margin-bottom: 10px;
+width: 100%;
+}
+#restore.tab-content.active ~ .right-panel .preview-container {
+height: calc(100% - 20px);
+align-items: center;
+}
+#split.tab-content.active ~ .right-panel .preview-container {
+max-height: 160px;
+}
+.preview-container .delete-btn {
+position: absolute;
+top: 5px;
+right: 5px;
+background-color: #ff4444;
+color: white;
+border: none;
+border-radius: 50%;
+width: 20px;
+height: 20px;
+font-size: 14px;
+line-height: 20px;
+text-align: center;
+cursor: pointer;
+}
+#loading {
+position: absolute;
+top: 170px;
+left: 50%;
+transform: translateX(-50%);
+display: none;
+text-align: center;
+color: #666;
+font-size: 14px;
+background-color: rgba(255, 255, 255, 0.8);
+padding: 10px;
+border-radius: 4px;
+z-index: 10;
+width: 90%;
+pointer-events: none;
+}
+.dragover {
+border: 2px dashed #007bff !important;
+background-color: #e6f0ff;
+}
+.restore-buttons {
+display: flex;
+flex-direction: row;
+gap: 10px;
+margin-top: 30px;
+}
+.restore-buttons button {
+padding: 8px;
+background-color: #666;
+color: white;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 14px;
+flex: 1;
+}
+.restore-buttons button:hover {
+background-color: #555;
+}
+#split.tab-content.active ~ .right-panel {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+#split.tab-content.active ~ .right-panel #preview {
+max-height: 150px;
+height: auto;
+margin-bottom: 10px;
+}
+#split.tab-content.active ~ .right-panel .preview-grid {
+max-height: 450px;
+overflow-y: auto;
+flex-grow: 1;
+}
+#split.tab-content.active ~ .right-panel .download-buttons {
+margin-top: 10px;
+}
+#successMessage {
+display: none; /* 默认隐藏 */
+}
+
+@media screen and (min-width: 769px) {
+#successMessage.show {
+    display: block; /* 电脑端添加 .show 类时显示 */
+    /* 电脑端特有样式，比如更大的字体或不同的背景色 */
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: #666;
+    font-size: 22px;
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 20;
+    width: 100%;
+    pointer-events: none;
+}
+}
+@media screen and (max-width: 768px) {
+html, body {
+    min-height: 100vh; /* 允许页面扩展超出视口 */
+    height: auto; /* 确保随内容自适应 */
+    overflow-y: auto; /* 浏览器控制滑动 */
+    margin: 0;
+    padding: 0;
+}
+body {
+    display: block; /* 移除 Flex 布局，使用默认流布局 */
+    padding: 0;
+}
+.container {
+    width: 100%;
+    max-width: 100%;
+    height: auto; /* 完全随内容自适应 */
+    max-height: 100%;
+    min-height: auto; /* 移除高度限制 */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* 防止 Flex 压缩 */
+    flex-grow: 0; /* 不扩展填充 */
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: visible; /* 允许内容溢出 */
+}
+.left-panel {
+    width: 100%;
+    padding-right: 0;
+    height: auto;
+    min-height: auto;
+    overflow-y: visible;
+}
+.right-panel {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    display: none; /* 初始隐藏 */
+    box-sizing: border-box;
+    height: auto; /* 自适应内容 */
+    overflow-y: visible; /* 无内部滑动 */
+}
+.right-panel:has(#preview:not([style*="display: none"]), #splitPreview:not([style*="display: none"]), .download-buttons:not([style*="display: none"])) {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    border: 2px dashed #ccc;
+    overflow-y: visible;
+}
+h1 {
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+.tab-container {
+    gap: 8px;
+}
+.tab {
+    padding: 8px;
+    font-size: 14px;
+}
+.section label {
+    font-size: 13px;
+}
+.bottom-type span,
+.bottom-effect span,
+.background-type span,
+.color-mode span {
+    font-size: 13px;
+}
+.upload-area.restore {
+    height: 120px;
+    font-size: 13px;
+    padding: 8px;
+}
+.upload-area.split {
+    min-height: 50px;
+    padding: 15px;
+    font-size: 13px;
+}
+.thumbnail {
+    width: 40px;
+    height: 40px;
+}
+.thumbnail .delete-btn {
+    width: 14px;
+    height: 14px;
+    font-size: 10px;
+    line-height: 14px;
+}
+.restore-buttons button,
+.split-buttons button,
+.preview-item button,
+.download-buttons button {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 44px;
+}
+.restore-buttons {
+    gap: 8px;
+    margin-top: 20px;
+}
+.split-buttons {
+    flex: 0 0 80px;
+    gap: 8px;
+}
+.restore-buttons button:nth-child(3),
+.preview-item button,
+.download-buttons button:nth-child(1) {
+    display: none;
+}
+input[type="range"] {
+    height: 6px;
+}
+input[type="range"]::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+}
+.range-value {
+    font-size: 13px;
+}
+#preview {
+    width: 70%;
+    height: auto;
+    margin-bottom: 8px;
+    -webkit-user-drag: none;
+    user-drag: none;
+    object-fit: contain;
+}
+#restore.tab-content.active ~ .right-panel #preview {
+    width: 80%;
+    height: auto;
+    object-fit: contain;
+}
+#split.tab-content.active ~ .right-panel #preview {
+    width: 80%;
+    height: auto;
+    object-fit: contain;
+}
+#split.tab-content.active ~ .right-panel .preview-grid {
+    max-height: none;
+    overflow-y: visible;
+    width: 100%;
+}
+.download-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: center;
+}
+.preview-grid {
+    gap: 8px;
+}
+.preview-item img {
+    max-width: 80px;
+    max-height: 80px;
+}
+.preview-item .label {
+    font-size: 12px;
+}
+#loading {
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    padding: 8px;
+    width: 80%;
+}
+.shape-tab-container {
+    gap: 8px;
+}
+.shape-tab {
+    padding: 6px;
+    font-size: 13px;
+}
+#successMessage.show {
+    display: block; /* 移动端添加 .show 类时显示 */
+    /* 移动端特有样式 */
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 8px;
+    border-radius: 4px;
+    z-index: 20;
+    width: 70%;
+    pointer-events: none;
+}
+}
+@media screen and (max-width: 480px) {
+.container {
+    padding: 8px;
+}
+.left-panel {
+    height: auto;
+    overflow-y: visible;
+}
+.right-panel {
+    margin-top: 8px;
+}
+h1 {
+    font-size: 18px;
+}
+.tab {
+    font-size: 13px;
+    padding: 6px;
+}
+.section label {
+    font-size: 12px;
+}
+.bottom-type span,
+.bottom-effect span,
+.background-type span,
+.color-mode span {
+    font-size: 12px;
+}
+.upload-area.restore {
+    height: 100px;
+}
+.thumbnail {
+    width: 35px;
+    height: 35px;
+}
+.restore-buttons button,
+.split-buttons button,
+.preview-item button,
+.download-buttons button {
+    font-size: 12px;
+    padding: 6px 8px;
+}
+.preview-item img {
+    max-width: 70px;
+    max-height: 70px;
+}
+#preview {      
+    width: 70%;
+    height: auto;
+    object-fit: contain;
+}
+#split.tab-content.active ~ .right-panel .preview-grid {
+    max-height: 35vh;
+}
+}
